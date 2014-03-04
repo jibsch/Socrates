@@ -790,7 +790,7 @@ public class BAMStratifier {
 			CommandLine cmd = parser.parse( options, args );
 
 			int threads = cmd.hasOption("threads") ? ((Number)cmd.getParsedOptionValue("threads")).intValue() : 1;
-			int min_mapq = cmd.hasOption("min_mapq") ? ((Number)cmd.getParsedOptionValue("min_mapq")).intValue() : 5;
+			int min_mapq = cmd.hasOption("min-mapq") ? ((Number)cmd.getParsedOptionValue("min-mapq")).intValue() : 5;
 			int max_long_sc = cmd.hasOption("long-sc-len") ? ((Number)cmd.getParsedOptionValue("long-sc-len")).intValue() : 25;
             int baseq = cmd.hasOption("base-quality") ? ((Number)cmd.getParsedOptionValue("base-quality")).intValue() : 5;
 			int min_percent_id = cmd.hasOption("percent-id") ? ((Number)cmd.getParsedOptionValue("percent-id")).intValue() : 95;

@@ -5,6 +5,7 @@ package net.wehi.socrates.util;
 
 import java.util.Arrays;
 import java.util.Vector;
+
 import net.sf.samtools.CigarOperator;
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.CigarElement;
@@ -81,6 +82,8 @@ public class SAMRecordSummary {
 		int pos = 0;
 		for (CigarElement op : cigar) {
 			switch ( CigarOperator.enumToCharacter( op.getOperator() ) ) {
+			case 'H':
+				break;
 			case 'S':
 				pos += op.getLength();
 				break;
@@ -91,10 +94,19 @@ public class SAMRecordSummary {
 				}
 				break;
 			default:
-				for (int n=0; n<op.getLength(); n++) {
-					as.add( sequence[pos] );
-					aq.add( qual[pos] );
-					pos++;
+				try {
+					for (int n=0; n<op.getLength(); n++) {
+						as.add( sequence[pos] );
+						aq.add( qual[pos] );
+						pos++;
+					}
+				} catch (Exception e) {
+					System.out.println("\nsequence: " + sequence.length);					
+					for (CigarElement optmp : cigar)
+						System.out.print((char)CigarOperator.enumToCharacter(optmp.getOperator()));
+					System.out.println("\npos: " + pos);
+					System.out.println(new String(aln.getReadBases()));					
+					e.printStackTrace(System.out);
 				}
 			}
 		}
