@@ -820,7 +820,7 @@ public class RealignmentClustering {
 			
 			int threads = cmd.hasOption("threads") ? ((Number)cmd.getParsedOptionValue("threads")).intValue() : 1;
 			boolean ideal = cmd.hasOption("ideal-only") ? true : false;
-			int min_mapq = cmd.hasOption("min_mapq") ? ((Number)cmd.getParsedOptionValue("min_mapq")).intValue() : 2;
+			int min_mapq = cmd.hasOption("min-mapq") ? ((Number)cmd.getParsedOptionValue("min-mapq")).intValue() : 2;
 			int max_long_sc = cmd.hasOption("long-sc-len") ? ((Number)cmd.getParsedOptionValue("long-sc-len")).intValue() : 25;
 			int max_support = cmd.hasOption("max_support") ? ((Number)cmd.getParsedOptionValue("max_support")).intValue() : 30;
 			boolean short_sc_cluster = cmd.hasOption("no-short-sc-cluster") ? false : true;
