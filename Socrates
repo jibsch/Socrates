@@ -214,10 +214,13 @@ def run_annotate(args):
     if args.repeatmask:
         cmd_list.append('--repeatmask')
         cmd_list.append( args.repeatmask)
+    if args.flank:
+        cmd_list.append('--flank')
+        cmd_list.append(args.flank)
     if args.verbose:
         cmd_list.append('--verbose')
     cmd_list.append(args.input_file)
-    cmd = " ".join(cmd_list)
+    cmd = " ".join(map(str,cmd_list))
     proc = subprocess.Popen( cmd, shell=True )
     proc.communicate()[0]
     return proc.returncode
@@ -317,6 +320,7 @@ if __name__=='__main__':
     ###################### AnnotateRearrangements ##########
     parser_annotate.add_argument("--normal", help="Socrates paired breakpoint calls for normal sample", type=str, default=None)
     parser_annotate.add_argument("--repeatmask", help="UCSC repeat masker track file in Tabix form", type=str, default=None)
+    parser_annotate.add_argument("--flank", help="Tolerance between two break points to be considered as related", type=int, default=10)
     parser_annotate.add_argument("--verbose", help="be verbose of progress", action='store_true')
     parser_annotate.add_argument('--jvm_memory', help="set Java Virtual Machine maximum memory size (e.g. 1g, 512m)",\
                                     type=str, default='8g')

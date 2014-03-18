@@ -66,7 +66,7 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 		Option flank = OptionBuilder.withArgName("flank")
 				.hasArg()
 				.withDescription("Normal breakpoint within FLANK nt of tumour breakpoint is considered as the same [default=10(nt)]")
-				.withType( Integer.class )
+				.withType( Number.class )
 				.withLongOpt( "flank" )
 				.create( 'f' );
 		Option rmsk = OptionBuilder.withArgName("repeatmask")
@@ -171,7 +171,7 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 			CommandLine cmd = parser.parse( options, args );
 			
             String norm = ((String)cmd.getParsedOptionValue("normal"));
-            int flank = cmd.hasOption("flank") ? ((Integer)cmd.getParsedOptionValue("flank")) : 10;
+            int flank = cmd.hasOption("flank") ? (((Long)cmd.getParsedOptionValue("flank")).intValue()) : 10;
             String rpt = cmd.hasOption("repeatmask") ? ((String)cmd.getParsedOptionValue("repeatmask")) : null;
             if (norm==null && rpt==null) {
             	System.err.println("No annotation specified.");
