@@ -75,10 +75,17 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 				.withType( String.class )
 				.withLongOpt( "repeatmask" )
 				.create( 'r' );
+		Option features = OptionBuilder.withArgName("features")
+				.hasArg()
+				.withDescription("Genomic features within FLANK nt of tumour breakpoint are annotated on either side of the break")
+				.withType(String.class)
+				.withLongOpt("features")
+				.create('g');
 		
 		//options.addOption( threads );
 		options.addOption(normal);
 		options.addOption(rmsk);
+		options.addOption(features);
 		options.addOption(flank);
 		options.addOption(verbose);
 		options.addOption(help);
@@ -173,9 +180,10 @@ public class AnnotatePairedClusters implements Callable<Integer> {
             String norm = ((String)cmd.getParsedOptionValue("normal"));
             int flank = cmd.hasOption("flank") ? (((Long)cmd.getParsedOptionValue("flank")).intValue()) : 10;
             String rpt = cmd.hasOption("repeatmask") ? ((String)cmd.getParsedOptionValue("repeatmask")) : null;
-            if (norm==null && rpt==null) {
+	    String feat = cmd.hasOption("features") ? ((String)cmd.getParsedOptionValue("features")) : null;
+            if (norm==null && rpt==null && feat==null) {
             	System.err.println("No annotation specified.");
-            	System.err.println("Use --normal and/or --repeatmask options to annotate results.");
+            	System.err.println("Use --normal, --features, and/or --repeatmask options to annotate results.");
                 printHelp();
                 System.exit(1);
             }
@@ -193,8 +201,12 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 		colNames = extendColumnNames(colNames, "normal");
 	    }
             if (rpt != null) { 
-		annotateRepeat( rpt, clusterPairs );
+		annotateRepeat( rpt, clusterPairs, flank );
 		colNames = extendColumnNames(colNames, "repeat");
+	    }
+	    if (feat != null){
+	       	annotateFeature(feat, clusterPairs, flank);
+	  	colNames = extendColumnNames(colNames, "feature");
 	    }
             String out = rargs[0]+".annotated";
             outputAnnotation( out, colNames, clusterPairs );
@@ -229,7 +241,7 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 		}
     }
 
-    public static void annotateRepeat(String rmskFile, ArrayList<PairedCluster> clusterPairs) {
+    public static void annotateRepeat(String rmskFile, ArrayList<PairedCluster> clusterPairs, int flank) {
         boolean isBed = rmskFile.indexOf(".bed") != -1;
 		
 		tabixFile = new File(rmskFile);
@@ -240,13 +252,33 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 		      
 		for (PairedCluster pc : clusterPairs) {
 //			x++;
-			String ann1 = annotateCluster(pc.cluster1, isBed);
-            String ann2 = annotateCluster(pc.cluster2, isBed);
+			String ann1 = annotateCluster(pc.cluster1, isBed, flank);
+                	if (!(SINE_LINE_LTR.contains(ann1) || SATELLITE.contains(ann1) || SIMPLE_RPT.contains(ann1))) ann1 = "";
+            		String ann2 = annotateCluster(pc.cluster2, isBed, flank);
+                	if (!(SINE_LINE_LTR.contains(ann2) || SATELLITE.contains(ann2) || SIMPLE_RPT.contains(ann2))) ann2 = "";
 
-            pc.text += "\t" + ann1 + "\t" + ann2;
+            		pc.text += "\t" + ann1 + "\t" + ann2;
 		}
 
 	}
+
+    public static void annotateFeature(String featureFile, ArrayList<PairedCluster> clusterPairs, int flank) {
+	boolean isBed = featureFile.indexOf(".bed") != -1;
+
+        tabixFile = new File(featureFile);
+        tabixMemory = new MemoryMappedFile(tabixFile, true);
+        annotations = new TabixReader(featureFile, new SeekableMemoryStream(tabixMemory));
+
+	for (PairedCluster pc : clusterPairs) {
+//                      x++;
+                        String ann1 = annotateCluster(pc.cluster1, isBed, flank);
+                        String ann2 = annotateCluster(pc.cluster2, isBed, flank);
+
+                        pc.text += "\t" + ann1 + "\t" + ann2;
+                }
+
+        }
+
 
     public static void outputAnnotation(String outputFilename, String colNames, ArrayList<PairedCluster> clusterPairs) {
         try { 
@@ -260,17 +292,18 @@ public class AnnotatePairedClusters implements Callable<Integer> {
         } catch (Exception e) {e.printStackTrace();}
     }
 
-    public static String annotateCluster(Cluster cluster, boolean isBed) {
+    public static String annotateCluster(Cluster cluster, boolean isBed, int flank) {
         String ann1 = "";
         try {
-        int s = (cluster.realignPos-10) <= 0 ? 1 : (cluster.realignPos-10);
-        String reg = cluster.realignChr+":"+s+"-"+(cluster.realignPos+10);
+        //int s = (cluster.realignPos-10) <= 0 ? 1 : (cluster.realignPos-10);
+	int s = Math.max(cluster.realignPos-flank, 1);
+        String reg = cluster.realignChr+":"+s+"-"+(cluster.realignPos+flank);
         TabixReader.Iterator annIter = annotations.query( reg );
         while (annIter!=null && (ann1=annIter.next())!=null) {
             String[] tokens = ann1.split("\t");
             if (!isBed) {
                 String rpt = tokens[11];
-                if (SINE_LINE_LTR.contains(rpt) || SATELLITE.contains(rpt) || SIMPLE_RPT.contains(rpt)) return rpt;
+		return rpt;
             } else return tokens[3];
         }} catch (Exception e) { e.printStackTrace(); }
         return "";

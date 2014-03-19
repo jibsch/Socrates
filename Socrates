@@ -214,6 +214,9 @@ def run_annotate(args):
     if args.repeatmask:
         cmd_list.append('--repeatmask')
         cmd_list.append( args.repeatmask)
+    if args.features:
+	cmd_list.append('--features')
+	cmd_list.append(args.features)
     if args.flank:
         cmd_list.append('--flank')
         cmd_list.append(args.flank)
@@ -320,6 +323,7 @@ if __name__=='__main__':
     ###################### AnnotateRearrangements ##########
     parser_annotate.add_argument("--normal", help="Socrates paired breakpoint calls for normal sample", type=str, default=None)
     parser_annotate.add_argument("--repeatmask", help="UCSC repeat masker track file in Tabix form", type=str, default=None)
+    parser_annotate.add_argument("--features", help="Annotate clusters with features such as genes. Tabix indexed bed file or comparable required (takes column 4 for bed, and 12 otherwise for annotation).", type=str, default=None)
     parser_annotate.add_argument("--flank", help="Tolerance between two break points to be considered as related", type=int, default=10)
     parser_annotate.add_argument("--verbose", help="be verbose of progress", action='store_true')
     parser_annotate.add_argument('--jvm_memory', help="set Java Virtual Machine maximum memory size (e.g. 1g, 512m)",\
