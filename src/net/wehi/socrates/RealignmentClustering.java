@@ -252,7 +252,7 @@ public class RealignmentClustering {
 			PrintWriter pairResult = null;
 			pairResult = new PrintWriter(pairOut);
 			pairResult.println("#C1_realign\tC1_realign_dir\tC1_realign_consensus\tC1_anchor\tC1_anchor_dir\tC1_anchor_consensus\tC1_long_support\tC1_long_support_bases\tC1_short_support\tC1_short_support_bases\tC1_short_support_max_len\tC1_avg_realign_mapq\t" +
-							    "C2_realign\tC2_realign_dir\tC2_realign_consensus\tC2_anchor\tC2_anchor_dir\tC2_anchor_consensus\tC2_long_support\tC2_long_support_bases\tC2_short_support\tC2_short_support_bases\tC2_short_support_max_len\tC2_avg_realign_mapq");
+							    "C2_realign\tC2_realign_dir\tC2_realign_consensus\tC2_anchor\tC2_anchor_dir\tC2_anchor_consensus\tC2_long_support\tC2_long_support_bases\tC2_short_support\tC2_short_support_bases\tC2_short_support_max_len\tC2_avg_realign_mapq\tBP_condition");
 			PrintWriter unpairResult = new PrintWriter(unpairOut);
 			
 			for (int i=0; i<tasks.size(); i++) {

@@ -202,11 +202,13 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 	    }
             if (rpt != null) { 
 		annotateRepeat( rpt, clusterPairs, flank );
-		colNames = extendColumnNames(colNames, "repeat");
+		colNames = extendColumnNames(colNames, "repeat1");
+		colNames = extendColumnNames(colNames, "repeat2");
 	    }
 	    if (feat != null){
 	       	annotateFeature(feat, clusterPairs, flank);
-	  	colNames = extendColumnNames(colNames, "feature");
+	  	colNames = extendColumnNames(colNames, "feature1");
+	  	colNames = extendColumnNames(colNames, "feature2");
 	    }
             String out = rargs[0]+".annotated";
             outputAnnotation( out, colNames, clusterPairs );
