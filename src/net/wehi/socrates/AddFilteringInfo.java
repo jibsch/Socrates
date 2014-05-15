@@ -255,31 +255,36 @@ public class AddFilteringInfo {
    }
 
 
-	private static int getSpanningCount(
+	private static int[] getSpanningCount(
 			String bp1chr, int bp1start, String bp1dir, String bp2chr, int bp2start, String bp2dir,SAMFileReader bamFile, int lowerInsertBound, int upperInsertBound, int readlen) {
 		String chr;
                 int start;
                 int end;
+                String normdir;
 
 		if(bp1dir.equals("-"))
 		{
 		        start=bp1start+1;
                         end=bp1start+1+(upperInsertBound-readlen);
                         chr=bp1chr;
+                        normdir="+";
                 }
                 else
                 {			
 		        end=bp1start-1;
                         start=bp1start-1-(upperInsertBound-readlen);
                         chr=bp1chr;
+                        normdir="-";
                 }
 
 		SAMRecordIterator iter = bamFile.queryContained(chr, start, end);
 		
 		
 		int spanningReadCount=0;
-		
-                int readToBreakpointDist;
+		int normalSpanningReadCount1=0;
+		int normalSpanningReadCount2=0;
+      int readToBreakpointDist;
+
 		for(SAMRecord s; iter.hasNext();){
 			s = iter.next();
                         if(bp1dir.equals("-"))
@@ -295,9 +300,47 @@ public class AddFilteringInfo {
                         {
                                 spanningReadCount++;
                         }
+                        if(mateMatch(s,bp1chr,bp1start,normdir,upperInsertBound,readToBreakpointDist))
+                        {
+                                normalSpanningReadCount1++;
+                        }
 		}
 		iter.close();
-		return spanningReadCount;
+		
+      if(bp2dir.equals("-"))
+		{
+		        start=bp2start+1;
+                        end=bp2start+1+(upperInsertBound-readlen);
+                        chr=bp2chr;
+                        normdir="+";
+                }
+                else
+                {			
+		        end=bp2start-1;
+                        start=bp2start-1-(upperInsertBound-readlen);
+                        chr=bp2chr;
+                        normdir="-";
+                }
+
+		iter = bamFile.queryContained(chr, start, end);
+		
+		for(SAMRecord s; iter.hasNext();){
+			s = iter.next();
+                        if(bp2dir.equals("-"))
+                        {
+                                readToBreakpointDist=s.getAlignmentStart()-bp2start;
+                        }
+                        else
+                        {
+                                readToBreakpointDist=bp2start-s.getAlignmentEnd();
+                        }
+                        if(mateMatch(s,bp2chr,bp2start,normdir,upperInsertBound,readToBreakpointDist))
+                        {
+                                normalSpanningReadCount2++;
+                        }
+		}
+		iter.close();
+		return new int [] {spanningReadCount,normalSpanningReadCount1,normalSpanningReadCount2};
 	}
 	
 	private static String resultsToString(int[] result){
@@ -372,10 +415,11 @@ public class AddFilteringInfo {
 			int minimumMappingQuality = 5;
 			int longScLength = 25;
 			
-			int spanning = getSpanningCount(bp1chr, bp1start, bp1dir, bp2chr, bp2start, bp2dir, reader, lower, upper,readlen);
+			int[] spanning = getSpanningCount(bp1chr, bp1start, bp1dir, bp2chr, bp2start, bp2dir, reader, lower, upper,readlen);
 			double[] bp1InsertMeanStd = getAnchorInsertStats(bp1chr, bp1start, bp1dir, reader, lower, upper,readlen, minimumMappingQuality, longScLength);
 			double[] bp2InsertMeanStd = getAnchorInsertStats(bp2chr, bp2start, bp2dir, reader, lower, upper,readlen, minimumMappingQuality, longScLength);
-			out.println(line+"\t"+bp1InsertMeanStd[0]+"\t"+bp1InsertMeanStd[1]+"\t"+bp1InsertMeanStd[2]+"\t"+bp2InsertMeanStd[0]+"\t"+bp2InsertMeanStd[1]+"\t"+bp2InsertMeanStd[2]+"\t"+spanning);
+			out.println(line+"\t"+bp1InsertMeanStd[0]+"\t"+bp1InsertMeanStd[1]+"\t"+bp1InsertMeanStd[2]+"\t"+bp2InsertMeanStd[0]+"\t"+bp2InsertMeanStd[1]+"\t"+bp2InsertMeanStd[2]+"\t"+spanning[0]+
+         "\t"+spanning[1]+"\t"+spanning[2]);
 			//System.out.println(line+"\t"+bp1InsertMeanStd[0]+"\t"+bp1InsertMeanStd[1]+"\t"+bp1InsertMeanStd[2]+"\t"+bp2InsertMeanStd[0]+"\t"+bp2InsertMeanStd[1]+"\t"+bp2InsertMeanStd[2]+"\t"+spanning);
          }
 		}
