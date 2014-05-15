@@ -63,10 +63,16 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 				.withType( String.class )
 				.withLongOpt("normal")
 				.create('n');
+		Option unpnormal = OptionBuilder.withArgName("unpnormal")
+				.hasArg()
+				.withDescription("Socrates unpaired breakpoint calls for normal sample")
+				.withType( String.class )
+				.withLongOpt("unpnormal")
+				.create('u');
 		Option flank = OptionBuilder.withArgName("flank")
 				.hasArg()
 				.withDescription("Normal breakpoint within FLANK nt of tumour breakpoint is considered as the same [default=10(nt)]")
-				.withType( Integer.class )
+				.withType( Number.class )
 				.withLongOpt( "flank" )
 				.create( 'f' );
 		Option rmsk = OptionBuilder.withArgName("repeatmask")
@@ -75,10 +81,18 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 				.withType( String.class )
 				.withLongOpt( "repeatmask" )
 				.create( 'r' );
+		Option features = OptionBuilder.withArgName("features")
+				.hasArg()
+				.withDescription("Genomic features within FLANK nt of tumour breakpoint are annotated on either side of the break")
+				.withType(String.class)
+				.withLongOpt("features")
+				.create('g');
 		
 		//options.addOption( threads );
 		options.addOption(normal);
+		options.addOption(unpnormal);
 		options.addOption(rmsk);
+		options.addOption(features);
 		options.addOption(flank);
 		options.addOption(verbose);
 		options.addOption(help);
@@ -143,6 +157,37 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 		return pb;
 	}
 	
+   public static ArrayList<UnPairedCluster> loadUnpairedBreakpoints(String filename) {
+		ArrayList<UnPairedCluster> pb = new ArrayList<UnPairedCluster>();
+		int discarded_chrom = 0;
+		try {
+			BufferedReader breader = new BufferedReader(new FileReader(filename));
+			String line = null; //breader.readLine(); // skip header line
+			while ((line=breader.readLine())!=null) {
+                if (line.charAt(0)=='#') continue;
+				String[] tokens = line.split("\t");
+				
+				// check chrom
+				if (tokens[0].indexOf('_')!=-1 || tokens[3].indexOf('_')!=-1) {
+					discarded_chrom++;
+					continue;
+				}
+				
+                UnPairedCluster p = new UnPairedCluster(tokens);
+                p.text = line;
+				pb.add( p );
+			}
+			breader.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		System.err.println("Discarded cluster pairs - non-ordinal chromosomes: " + discarded_chrom);
+		System.err.println("Loaded cluster pairs: " + pb.size());
+		
+		return pb;
+	}
+	
 	private static String extractColumnNames(String filename){
 		try {
                         BufferedReader breader = new BufferedReader(new FileReader(filename));
@@ -171,11 +216,13 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 			CommandLine cmd = parser.parse( options, args );
 			
             String norm = ((String)cmd.getParsedOptionValue("normal"));
-            int flank = cmd.hasOption("flank") ? ((Integer)cmd.getParsedOptionValue("flank")) : 10;
+            String unpnorm = cmd.hasOption("unpnormal") ? ((String)cmd.getParsedOptionValue("unpnormal")) : null;
+            int flank = cmd.hasOption("flank") ? (((Long)cmd.getParsedOptionValue("flank")).intValue()) : 10;
             String rpt = cmd.hasOption("repeatmask") ? ((String)cmd.getParsedOptionValue("repeatmask")) : null;
-            if (norm==null && rpt==null) {
+	    String feat = cmd.hasOption("features") ? ((String)cmd.getParsedOptionValue("features")) : null;
+            if (norm==null && rpt==null && feat==null) {
             	System.err.println("No annotation specified.");
-            	System.err.println("Use --normal and/or --repeatmask options to annotate results.");
+            	System.err.println("Use --normal, --features, and/or --repeatmask --unpnormal options to annotate results.");
                 printHelp();
                 System.exit(1);
             }
@@ -189,12 +236,18 @@ public class AnnotatePairedClusters implements Callable<Integer> {
             ArrayList<PairedCluster> clusterPairs = loadBreakpoints( rargs[0] );
 	    String colNames = extractColumnNames(rargs[0]);
             if (norm != null) {
-		annotateNormal( norm, clusterPairs, flank );
+		annotateNormal( norm, clusterPairs, flank, unpnorm );
 		colNames = extendColumnNames(colNames, "normal");
 	    }
             if (rpt != null) { 
-		annotateRepeat( rpt, clusterPairs );
-		colNames = extendColumnNames(colNames, "repeat");
+		annotateRepeat( rpt, clusterPairs, flank );
+		colNames = extendColumnNames(colNames, "repeat1");
+		colNames = extendColumnNames(colNames, "repeat2");
+	    }
+	    if (feat != null){
+	       	annotateFeature(feat, clusterPairs, flank);
+	  	colNames = extendColumnNames(colNames, "feature1");
+	  	colNames = extendColumnNames(colNames, "feature2");
 	    }
             String out = rargs[0]+".annotated";
             outputAnnotation( out, colNames, clusterPairs );
@@ -206,22 +259,33 @@ public class AnnotatePairedClusters implements Callable<Integer> {
         //ArrayList<PairedCluster> clusterPairs = loadBreakpoints( clustersPairFile );
     }
 
-    public static void annotateNormal(String normalResult, ArrayList<PairedCluster> tumourClusterPairs, int tolerance) {
+    public static void annotateNormal(String normalResult, ArrayList<PairedCluster> tumourClusterPairs, int tolerance, String unpnorm) {
         TreeSet<PairedCluster> clustersTumour = new TreeSet<PairedCluster>( tumourClusterPairs );
         TreeSet<PairedCluster> clustersNormal = new TreeSet<PairedCluster>( loadBreakpoints( normalResult ) );
+        ArrayList<UnPairedCluster> clustersUnpNormal = unpnorm!=null ? new ArrayList<UnPairedCluster>( loadUnpairedBreakpoints( unpnorm ) ) : null; 
 
 		for (PairedCluster tumourCluster : clustersTumour) {
 			PairedCluster lower = new PairedCluster(tumourCluster, -2*tolerance);
 			PairedCluster upper = new PairedCluster(tumourCluster, 2*tolerance);
-			PairedCluster matched = null;
+			boolean matched = false;
 			for (PairedCluster normalCluster : clustersNormal.subSet(lower, true, upper, true)) {
 				if (tumourCluster.match(normalCluster, tolerance)) {
-					matched = normalCluster;
+					matched = true;
+					break;
+				}
+         }
+//working line, do not need tree, array will do			
+         if(!matched)
+         {
+         for (UnPairedCluster normalUnpCluster : clustersUnpNormal) {
+				if (normalUnpCluster.match(tumourCluster, tolerance)) {
+					matched = true;
 					break;
 				}
 			}
+         }
 			
-			if (matched != null) {
+			if (matched) {
 				tumourCluster.text += "\tnormal";
 			} else {
 				tumourCluster.text += "\t";
@@ -229,7 +293,7 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 		}
     }
 
-    public static void annotateRepeat(String rmskFile, ArrayList<PairedCluster> clusterPairs) {
+    public static void annotateRepeat(String rmskFile, ArrayList<PairedCluster> clusterPairs, int flank) {
         boolean isBed = rmskFile.indexOf(".bed") != -1;
 		
 		tabixFile = new File(rmskFile);
@@ -240,13 +304,33 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 		      
 		for (PairedCluster pc : clusterPairs) {
 //			x++;
-			String ann1 = annotateCluster(pc.cluster1, isBed);
-            String ann2 = annotateCluster(pc.cluster2, isBed);
+			String ann1 = annotateCluster(pc.cluster1, isBed, flank);
+                	if (!(SINE_LINE_LTR.contains(ann1) || SATELLITE.contains(ann1) || SIMPLE_RPT.contains(ann1))) ann1 = "";
+            		String ann2 = annotateCluster(pc.cluster2, isBed, flank);
+                	if (!(SINE_LINE_LTR.contains(ann2) || SATELLITE.contains(ann2) || SIMPLE_RPT.contains(ann2))) ann2 = "";
 
-            pc.text += "\t" + ann1 + "\t" + ann2;
+            		pc.text += "\t" + ann1 + "\t" + ann2;
 		}
 
 	}
+
+    public static void annotateFeature(String featureFile, ArrayList<PairedCluster> clusterPairs, int flank) {
+	boolean isBed = featureFile.indexOf(".bed") != -1;
+
+        tabixFile = new File(featureFile);
+        tabixMemory = new MemoryMappedFile(tabixFile, true);
+        annotations = new TabixReader(featureFile, new SeekableMemoryStream(tabixMemory));
+
+	for (PairedCluster pc : clusterPairs) {
+//                      x++;
+                        String ann1 = annotateCluster(pc.cluster1, isBed, flank);
+                        String ann2 = annotateCluster(pc.cluster2, isBed, flank);
+
+                        pc.text += "\t" + ann1 + "\t" + ann2;
+                }
+
+        }
+
 
     public static void outputAnnotation(String outputFilename, String colNames, ArrayList<PairedCluster> clusterPairs) {
         try { 
@@ -260,17 +344,18 @@ public class AnnotatePairedClusters implements Callable<Integer> {
         } catch (Exception e) {e.printStackTrace();}
     }
 
-    public static String annotateCluster(Cluster cluster, boolean isBed) {
+    public static String annotateCluster(Cluster cluster, boolean isBed, int flank) {
         String ann1 = "";
         try {
-        int s = (cluster.realignPos-10) <= 0 ? 1 : (cluster.realignPos-10);
-        String reg = cluster.realignChr+":"+s+"-"+(cluster.realignPos+10);
+        //int s = (cluster.realignPos-10) <= 0 ? 1 : (cluster.realignPos-10);
+	int s = Math.max(cluster.realignPos-flank, 1);
+        String reg = cluster.realignChr+":"+s+"-"+(cluster.realignPos+flank);
         TabixReader.Iterator annIter = annotations.query( reg );
         while (annIter!=null && (ann1=annIter.next())!=null) {
             String[] tokens = ann1.split("\t");
             if (!isBed) {
                 String rpt = tokens[11];
-                if (SINE_LINE_LTR.contains(rpt) || SATELLITE.contains(rpt) || SIMPLE_RPT.contains(rpt)) return rpt;
+		return rpt;
             } else return tokens[3];
         }} catch (Exception e) { e.printStackTrace(); }
         return "";
@@ -447,4 +532,66 @@ class PairedCluster implements Comparable<PairedCluster> {
 	public String toString(SAMFileInfo info) {
 		return cluster1.toString(info) + "\t" + cluster2.toString(info);
 	}
+
+   public Cluster getsmall() {
+      return this.small;
+   }
+   public Cluster getlarge() {
+      return this.large;
+   }
+}
+
+class UnPairedCluster implements Comparable<UnPairedCluster> {
+	String text;
+	Cluster cluster1;
+	private Cluster small;
+	
+	
+	public UnPairedCluster(String[] tokens) {
+		String[] c1 = Arrays.copyOfRange(tokens, 0, 12);
+		
+		cluster1 = new Cluster(c1);
+		
+		//StringBuilder b = new StringBuilder();
+		//for (int i=0; i< tokens.length; i++) {
+		//	b.append(tokens[i]);
+		//	if (i!=tokens.length-1) b.append("\t");
+		//}
+		//text = b.toString();
+		
+			small = cluster1; 
+	}
+	
+	public UnPairedCluster(UnPairedCluster template, int offset) {
+      cluster1 = new Cluster();
+      cluster1.setRealignCoord(template.cluster1.realignChr, template.cluster1.realignPos+offset, template.cluster1.realignFwd);
+      cluster1.setAnchorCoord(template.cluster1.anchorChr, template.cluster1.anchorPos+offset, template.cluster1.anchorFwd);
+      cluster1.realignSeq = template.cluster1.realignSeq;
+      cluster1.anchorSeq = template.cluster1.anchorSeq;
+      small = cluster1;
+   }
+
+//   public boolean match(UnPairedCluster other, int tolerance) {
+//		int smallVsSmall = this.small.compareTo(other.small);
+//		return smallVsSmall;
+//   }
+   
+	public boolean match(PairedCluster other, int tolerance) {
+		return (small.match(other.getsmall(), tolerance) || small.match(other.getlarge(), tolerance));
+	}
+	
+	public int compareTo(UnPairedCluster other) {
+		int smallVsSmall = this.small.compareTo(other.small);
+		return smallVsSmall;
+	}
+
+    @Override
+    public boolean equals(Object o) {
+        UnPairedCluster other = (UnPairedCluster)o;
+        return this.compareTo(other)==0;
+    }
+
+   public String toString(SAMFileInfo info) {
+      return cluster1.toString(info);
+   }
 }
