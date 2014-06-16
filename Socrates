@@ -92,6 +92,11 @@ def make_java_cmd( mode, java_mem ):
 def run_all(args):
     long_sc_fq, long_sc_bam, short_sc_bam, metrics = get_output_filenames( args.input_file )
 
+    if args.bowtie2_db is None:
+      print >> sys.stderr, 'Bowtie2 DB is required to perform soft-clip realignment. Please specify this parameter with --bowtie2_db'
+      sys.exit(1)
+
+
     ret_code = run_preprocess(args, args.input_file)
     if ret_code!=0:
         raise Exception("'preprocess' task failed")
