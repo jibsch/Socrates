@@ -125,6 +125,38 @@ usage: Socrates predict [options] realigned_sc_bam short_sc_bam metrics_file
 
 -v,	--verbose			be verbose of progress
      
+The rearrangement predictor is the main part of the algorithm. It clusters the 
+split reads, and then pairs clusters to form the output. 
+There are two files generated: the paired and unpiared outputs. The paired output
+contains the best results, while the unpaired contains any soft-clips that have 
+realigned anywhere else in the process re-alignments stage of the algorithm.
+The unpaired results are included for completeness as they can contain some
+useful information, but overall this output is comprised of false positives 
+due to mapping errors and other artefacts. 
+The paired output contains various columns of information that describe the 
+location of the break point and the level of support. The column labelled 
+'BP_condition' describes the nature of the fusion event. It can take any of 
+five values:
+1. Blunt-end joining: the most straight forward case of a clean join (none
+of the below).
+2. Micro-homology: Xbp homology found! (XXX): the two joined regions are 
+identical for X bases across the break. Therefore the true location of the 
+breakpoint is only known within those boundaries.
+3. Inserted sequence: XXX: There is a short bit of sequence inserted in 
+between the two loci of the fusion. The sequence is either untemplated or 
+from somewhere else in the genome (but too short to map).
+4. unequal distances of realigned breakpoint to anchor breakpoint: X v Y: 
+In this case the realignment and anchor loci of the two paired clusters do 
+not support the exact same coordinate for a fusion (|X-Y| indicates the 
+difference). This is usually due to mis-mappings.
+5. Unequal inserted sequence: XXX v Y: an insert occurs as above, but 
+Socrates was unable to determine the exact sequence. One of the values 
+should contain the correct sequence.
+6. short SC cluster: In most experiments the most prevalent type, yet the
+least trustworthy. Only one side of the breakpoint is supported by realiged
+split reads, the other by short bits of soft-clipped sequence only. This sort
+of cluster pairing makes Socrates very sensitive, but introduces false 
+positives.
   
 1.4. Annotating rearrangements
 
