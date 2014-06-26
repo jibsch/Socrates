@@ -220,8 +220,8 @@ def run_annotate(args):
         cmd_list.append('--repeatmask')
         cmd_list.append( args.repeatmask)
     if args.features:
-	cmd_list.append('--features')
-	cmd_list.append(args.features)
+        cmd_list.append('--features')
+        cmd_list.append(args.features)
     if args.flank:
         cmd_list.append('--flank')
         cmd_list.append(args.flank)
