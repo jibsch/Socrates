@@ -64,6 +64,8 @@ def make_java_cmd( mode, java_mem ):
         binary = 'RealignmentBAM'
     elif mode=='predict':
         binary = 'RealignmentClustering'
+    elif mode=='annotateUn':
+        binary = 'AnnotateUnPairedClusters'
     elif mode=='annotate':
         binary = 'AnnotatePairedClusters'
     elif mode=='filter':
@@ -104,6 +106,10 @@ def run_all(args):
     if ret_code!=0:
         raise Exception("'prediction' task failed")
 
+    if args.unpaired:
+        ret_code = run_annotateUn(args)
+        if ret_code!=0:
+            raise Exception("'annotateUn' task failed")
     if args.normal or args.repeatmask:
         ret_code = run_annotate(args)
         if ret_code!=0:
@@ -231,6 +237,33 @@ def run_annotate(args):
     proc.communicate()[0]
     return proc.returncode
 
+def run_annotateUn(args):
+    cmd_list = []
+    cmd_list.append(make_java_cmd('annotateUn', args.jvm_memory))
+    
+    if args.normal:
+        cmd_list.append('--normal') 
+        cmd_list.append(args.normal)
+    if args.unpnormal:
+        cmd_list.append('--unpnormal') 
+        cmd_list.append(args.unpnormal)
+    if args.repeatmask:
+        cmd_list.append('--repeatmask')
+        cmd_list.append( args.repeatmask)
+    if args.features:
+	cmd_list.append('--features')
+	cmd_list.append(args.features)
+    if args.flank:
+        cmd_list.append('--flank')
+        cmd_list.append(args.flank)
+    if args.verbose:
+        cmd_list.append('--verbose')
+    cmd_list.append(args.input_file)
+    cmd = " ".join(map(str,cmd_list))
+    proc = subprocess.Popen( cmd, shell=True )
+    proc.communicate()[0]
+    return proc.returncode
+
 def run_filtering(args):
     cmd = make_java_cmd('filter', args.jvm_memory)
     cmd += args.bam_file + " " + args.socrates_file
@@ -261,6 +294,8 @@ if __name__=='__main__':
     parser_realign    = subparsers.add_parser('realignment', help='Create re-alignment BAM file',
                                               formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_predict    = subparsers.add_parser('predict', help='Predict breakpoints with Socrates',
+                                              formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_annotateUn   = subparsers.add_parser('annotateUn', help='Annotate Socrates unpaired results with germline breakpoints and repeat mask.',
                                               formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_annotate   = subparsers.add_parser('annotate', help='Annotate Socrates results with germline breakpoints and repeat mask.',
                                               formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -334,6 +369,18 @@ if __name__=='__main__':
                                     type=str, default='8g')
     parser_annotate.add_argument("input_file", help="Results from PredictRearrangements")
 
+    ###################### AnnotateRearrangements ##########
+    parser_annotateUn.add_argument("--normal", help="Socrates paired breakpoint calls for normal sample", type=str, default=None)
+    parser_annotateUn.add_argument("--unpnormal", help="Socrates unpaired breakpoint calls for normal sample", type=str, default=None)
+    parser_annotateUn.add_argument("--repeatmask", help="UCSC repeat masker track file in Tabix form", type=str, default=None)
+    parser_annotateUn.add_argument("--features", help="Annotate clusters with features such as genes. Tabix indexed bed file or comparable required (takes column 4 for bed, and 12 otherwise for annotation).", type=str, default=None)
+    parser_annotateUn.add_argument("--flank", help="Tolerance between two break points to be considered as related", type=int, default=10)
+    parser_annotateUn.add_argument("--verbose", help="be verbose of progress", action='store_true')
+    parser_annotateUn.add_argument('--jvm_memory', help="set Java Virtual Machine maximum memory size (e.g. 1g, 512m)",\
+                                    type=str, default='8g')
+    parser_annotateUn.add_argument("input_file", help="Results from PredictRearrangements")
+    parser_annotateUn.add_argument("--unpaired", help="Signal that the input file is unpaired")
+    
     ###################### Add Filtration Values #############
     parser_filter.add_argument('--jvm_memory', help="set Java Virtual Machine maximum memory size (e.g. 1g, 512m)",\
                                     type=str, default='8g')
@@ -398,5 +445,7 @@ if __name__=='__main__':
         run_predict(args, args.long_sc_bam, args.short_sc_bam, args.metrics_file)
     elif args.mode=='annotate':
         run_annotate(args)
+    elif args.mode=='annotateUn':
+        run_annotateUn(args)
     elif args.mode=='filter':
         run_filtering(args)

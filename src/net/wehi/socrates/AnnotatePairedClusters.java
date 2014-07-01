@@ -579,6 +579,9 @@ class UnPairedCluster implements Comparable<UnPairedCluster> {
 	public boolean match(PairedCluster other, int tolerance) {
 		return (small.match(other.getsmall(), tolerance) || small.match(other.getlarge(), tolerance));
 	}
+	public boolean match(UnPairedCluster other, int tolerance) {
+		return (small.match(other.getsmall(), tolerance));
+	}
 	
 	public int compareTo(UnPairedCluster other) {
 		int smallVsSmall = this.small.compareTo(other.small);
@@ -593,5 +596,8 @@ class UnPairedCluster implements Comparable<UnPairedCluster> {
 
    public String toString(SAMFileInfo info) {
       return cluster1.toString(info);
+   }
+   public Cluster getsmall() {
+      return this.small;
    }
 }

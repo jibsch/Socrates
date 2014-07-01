@@ -387,40 +387,56 @@ public class AddFilteringInfo {
       try{	
       PrintWriter out = new PrintWriter(new FileOutputStream(new File( allArgs[1]+".filterInfo" ) ) );
                
-   	
+               StringTokenizer bp1;
+			      String bp1dir;
+			      StringTokenizer bp2;
+			      String bp2dir;
+	
 		while( (line = vars.readLine()) != null) {
                         //System.out.println("*"+line);
 			String[] cols = line.split("\t");
          if(!cols[0].startsWith("#"))
          {
-			StringTokenizer bp1 = new StringTokenizer(cols[3],":");
-			String bp1dir = cols[4];
-			StringTokenizer bp2 = new StringTokenizer(cols[15],":");
-			String bp2dir = cols[16];
+            if(cols[0].length()<15)
+            {
+               //unpaired input
+			      bp1 = new StringTokenizer(cols[3],":");
+			      bp1dir = cols[4];
+			      bp2 = new StringTokenizer(cols[0],":");
+			      bp2dir = cols[1];
+            }
+            else
+            {
+               //paired input
+			      bp1 = new StringTokenizer(cols[3],":");
+			      bp1dir = cols[4];
+			      bp2 = new StringTokenizer(cols[15],":");
+			      bp2dir = cols[16];
+            }
 
-			String bp1chr = bp1.nextToken();
-			int bp1start = Integer.parseInt(bp1.nextToken());
-			int bp1end = bp1start;
-			String bp2chr = bp2.nextToken();
-			int bp2start = Integer.parseInt(bp2.nextToken());
-			int bp2end = bp1start;
+			      String bp1chr = bp1.nextToken();
+			      int bp1start = Integer.parseInt(bp1.nextToken());
+			      int bp1end = bp1start;
+			      String bp2chr = bp2.nextToken();
+			      int bp2start = Integer.parseInt(bp2.nextToken());
+			      int bp2end = bp1start;
 			
 
-         //get reads overlapping breakpoint1
-         //count up spanning reads
-         //determine mean and std of insert size for anchors
+               //get reads overlapping breakpoint1
+               //count up spanning reads
+               //determine mean and std of insert size for anchors
 
-			//System.out.println(bp1chr+":"+bp1start+"\t"+bp1dir+"\t"+bp2chr+":"+bp2start+"\t"+bp2dir);
+			      //System.out.println(bp1chr+":"+bp1start+"\t"+bp1dir+"\t"+bp2chr+":"+bp2start+"\t"+bp2dir);
 
-			int minimumMappingQuality = 5;
-			int longScLength = 25;
+			      int minimumMappingQuality = 5;
+			      int longScLength = 25;
 			
-			int[] spanning = getSpanningCount(bp1chr, bp1start, bp1dir, bp2chr, bp2start, bp2dir, reader, lower, upper,readlen);
-			double[] bp1InsertMeanStd = getAnchorInsertStats(bp1chr, bp1start, bp1dir, reader, lower, upper,readlen, minimumMappingQuality, longScLength);
-			double[] bp2InsertMeanStd = getAnchorInsertStats(bp2chr, bp2start, bp2dir, reader, lower, upper,readlen, minimumMappingQuality, longScLength);
-			out.println(line+"\t"+bp1InsertMeanStd[0]+"\t"+bp1InsertMeanStd[1]+"\t"+bp1InsertMeanStd[2]+"\t"+bp2InsertMeanStd[0]+"\t"+bp2InsertMeanStd[1]+"\t"+bp2InsertMeanStd[2]+"\t"+spanning[0]+
-         "\t"+spanning[1]+"\t"+spanning[2]);
-			//System.out.println(line+"\t"+bp1InsertMeanStd[0]+"\t"+bp1InsertMeanStd[1]+"\t"+bp1InsertMeanStd[2]+"\t"+bp2InsertMeanStd[0]+"\t"+bp2InsertMeanStd[1]+"\t"+bp2InsertMeanStd[2]+"\t"+spanning);
+			      int[] spanning = getSpanningCount(bp1chr, bp1start, bp1dir, bp2chr, bp2start, bp2dir, reader, lower, upper,readlen);
+			      double[] bp1InsertMeanStd = getAnchorInsertStats(bp1chr, bp1start, bp1dir, reader, lower, upper,readlen, minimumMappingQuality, longScLength);
+			      double[] bp2InsertMeanStd = getAnchorInsertStats(bp2chr, bp2start, bp2dir, reader, lower, upper,readlen, minimumMappingQuality, longScLength);
+			      out.println(line+"\t"+bp1InsertMeanStd[0]+"\t"+bp1InsertMeanStd[1]+"\t"+bp1InsertMeanStd[2]+"\t"+bp2InsertMeanStd[0]+"\t"+bp2InsertMeanStd[1]+"\t"+bp2InsertMeanStd[2]+"\t"+spanning[0]+
+               "\t"+spanning[1]+"\t"+spanning[2]);
+			      //System.out.println(line+"\t"+bp1InsertMeanStd[0]+"\t"+bp1InsertMeanStd[1]+"\t"+bp1InsertMeanStd[2]+"\t"+bp2InsertMeanStd[0]+"\t"+bp2InsertMeanStd[1]+"\t"+bp2InsertMeanStd[2]+"\t"+spanning);
          }
 		}
       out.close();

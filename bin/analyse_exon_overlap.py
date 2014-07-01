@@ -16,7 +16,7 @@ if len(sys.argv) < 2:
   sys.exit(0)
 
 
-f=open('/home/users/allstaff/schroeder/references/human/refGene.txt')
+f=open('/HDD/gmaci/research/data/hg19/refGene.txt')
 lines=f.readlines()
 f.close()
 
@@ -39,6 +39,10 @@ for l in lines:
 f=open(sys.argv[1])
 lines=f.readlines()
 f.close()
+
+name=sys.argv[1]
+name=name.replace("results_Socrates_paired_","")
+name=name.replace("_long_sc_l25_q5_m5_i95.txt.coords","")
   
 exex = 0
 exon_boundary_margin = 6
@@ -51,9 +55,17 @@ for l in lines :
   c2=sp[3]
   p2=int(sp[4])
   d2=sp[5]
+  l1=int(sp[6])
+  lb1=int(sp[7])
+  l2=int(sp[8])
+  lb2=int(sp[9])
+  s1=int(sp[10])
+  s2=int(sp[11])
   if  c1 not in exons or c2 not in exons:
+    print name,
+    print "\t",
     print "no gene connection for line: ",
-    print l,
+    print "\t".join(sp)
     continue
   i = bisect.bisect_left(exons[c1], (p1,p1,'',1))
   j = 1
@@ -82,16 +94,25 @@ for l in lines :
   #print "genes for %d: %s\ngenes for %d: %s\n------" %(p1, str(genes1), p2, str(genes2))
 
   if len(genes1) == 0 and len(genes2) == 0:
+    print name,
+    print "\t",
     print "no gene connection for line: ",
-    print l,
+    print "\t",
+    print "\t".join(sp)
     continue
   if len(genes1) == 0:
+    print name,
+    print "\t",
     print "partial gene link into %s: " %(str(genes2)),
-    print l,
+    print "\t",
+    print "\t".join(sp)
     continue
   if len(genes2) == 0:
+    print name,
+    print "\t",
     print "partial gene link into %s: " %(str(genes1)),
-    print l,
+    print "\t",
+    print "\t".join(sp)
     continue
 
   #g2=[x[2] for x in genes2]
@@ -103,11 +124,19 @@ for l in lines :
       y = g2[x[2]]
       link.append((x[2],x[3],y[3]))
   if link ==[]:
-    print "breakpoint links two different genes: %s VS %s" %(str(genes1), str(genes2))
+    print name,
+    print "\t",
+    print "breakpoint links two different genes: %s VS %s"    %(str(genes1), str(genes2)),
+    print "\t",
+    print "\t".join(sp)
   else : 
     exex += 1
+    print name,
+    print "\t",
     print "exon exon junction: ",
-    print link
+    print link,
+    print "\t",
+    print "\t".join(sp)
 
 #print ""
 #print "Total exon junctions: %d" %(exex)
