@@ -106,7 +106,7 @@ def run_all(args):
     if ret_code!=0:
         raise Exception("'prediction' task failed")
 
-    if args.unpaired:
+    if args.unpnormal:
         ret_code = run_annotateUn(args)
         if ret_code!=0:
             raise Exception("'annotateUn' task failed")
