@@ -134,9 +134,41 @@ The unpaired results are included for completeness as they can contain some
 useful information, but overall this output is comprised of false positives 
 due to mapping errors and other artefacts. 
 The paired output contains various columns of information that describe the 
-location of the break point and the level of support. The column labelled 
-'BP_condition' describes the nature of the fusion event. It can take any of 
-five values:
+location of the break point and the level of support:
+1. C1_realign - this genomic locus describes the position of the realigned 
+soft-clips of cluster 1. The position is a consensus if the realignements are
+not exactly the same for all soft-clips. The locus is that of the first soft-
+clipped base, so the one immediately next to the breakpoint.
+2. C1_realign_dir - this field takes either "+" or "-" and indicates whether 
+the realigned softclips map upstream of C1_realign (+) or downstream (-) --
+with respect to the reference genome.
+3. C1_realign_consensus - a consensus sequence made of soft-clips in cluster 1.
+An asterisk optionally marks the position of the breakpoint within the 
+consensus (if the position was unanimous). 
+4. C1_anchor - a second locus describing the anchor region of the cluster. 
+The anchor is defined by the reads that were mapped in the initial alignments
+and which soft-clips formed the earlier columns. The postion is the consensus
+of positions before the first soft-clipped base.
+5. C1_anchor_dir - analogous to above this field describes whether the anchor
+region is upstream ("+") or downstream ("-") of the breakpoint in the reference.
+6. C1_anchor_consensus - the consensus sequence of the anchor reads.
+7. C1_long_support - this number counts the number of "long" soft-clips (as
+specified during the run of Socrates) that support the cluster C1. This number is
+at least 1, as there would not be a cluster without a realigned soft-clip.
+8. C1_long_support_bases - the number of nucleotides in the long support of 
+the preceding column counted and reported in this column.
+9. C1_short_support - similarly, the short support is counted in number...
+10. C1_short_support_bases - ... and nucleotides.
+11. C1_avg_realign_mapq - this last column for C1 summarizes the average mapping
+quality of the anchor reads. It can be a helpful filter criteria and a minimum
+value can be specified at the launch of Socrates.
+12-22. C2 columns - all columns described above are repeated for C2. There is 
+only one noticeable difference: C2 can be a cluster formed without realigned 
+soft-clips (see "short SC cluster" below), which leads to empty consensus 
+sequences (there are double-tabs in the output, which can be quite nasty to
+deal with. Apologies!) and long-support values set to 0.
+Finally, the column labelled "BP_condition" describes the nature of the fusion 
+event. It can take any of five values:
 1. Blunt-end joining: the most straight forward case of a clean join (none
 of the below).
 2. Micro-homology: Xbp homology found! (XXX): the two joined regions are 
