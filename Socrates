@@ -227,6 +227,9 @@ def run_annotate(args):
         cmd_list.append(args.flank)
     if args.verbose:
         cmd_list.append('--verbose')
+    if args.noFilter:
+        cmd_list.append('--noFilter')
+
     cmd_list.append(args.input_file)
     cmd = " ".join(map(str,cmd_list))
     proc = subprocess.Popen( cmd, shell=True )
@@ -333,6 +336,7 @@ if __name__=='__main__':
     parser_annotate.add_argument("--verbose", help="be verbose of progress", action='store_true')
     parser_annotate.add_argument('--jvm_memory', help="set Java Virtual Machine maximum memory size (e.g. 1g, 512m)",\
                                     type=str, default='8g')
+    parser_annotate.add_argument('--noFilter', help="Do not remove non-ordinal chromosomes from the output (chromsomes that contain underscores in their name)", action='store_true')
     parser_annotate.add_argument("input_file", help="Results from PredictRearrangements")
 
     ###################### Add Filtration Values #############

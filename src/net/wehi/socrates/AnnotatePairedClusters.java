@@ -51,6 +51,7 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 	static {
 		Option help = new Option( "h", "help", false, "print this message" );
 		Option verbose = new Option( "v", "verbose", false, "be verbose of progress" );
+		Option noFilter = new Option("noFilter", false, "Do not filter the non-ordinal chromsomes");
 /*		Option threads = OptionBuilder.withArgName( "threads" )
 										.hasArg()
 										.withDescription("Number of threads to use [default: 3]")
@@ -89,6 +90,7 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 		options.addOption(flank);
 		options.addOption(verbose);
 		options.addOption(help);
+		options.addOption(noFilter);
 	}
 	
 	public static void printHelp() {
@@ -119,7 +121,7 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 		return new Integer(0);
 	}
 	
-	public static ArrayList<PairedCluster> loadBreakpoints(String filename) {
+	public static ArrayList<PairedCluster> loadBreakpoints(String filename, boolean filterChromosomes) {
 		ArrayList<PairedCluster> pb = new ArrayList<PairedCluster>();
 		int discarded_chrom = 0;
 		try {
@@ -130,7 +132,7 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 				String[] tokens = line.split("\t");
 				
 				// check chrom
-				if (tokens[0].indexOf('_')!=-1 || tokens[3].indexOf('_')!=-1 || tokens[12].indexOf('_')!=-1 || tokens[15].indexOf('_')!=-1) {
+				if (filterChromosomes && (tokens[0].indexOf('_')!=-1 || tokens[3].indexOf('_')!=-1 || tokens[12].indexOf('_')!=-1 || tokens[15].indexOf('_')!=-1) ) {
 					discarded_chrom++;
 					continue;
 				}
@@ -181,6 +183,7 @@ public class AnnotatePairedClusters implements Callable<Integer> {
             int flank = cmd.hasOption("flank") ? (((Long)cmd.getParsedOptionValue("flank")).intValue()) : 10;
             String rpt = cmd.hasOption("repeatmask") ? ((String)cmd.getParsedOptionValue("repeatmask")) : null;
 	    String feat = cmd.hasOption("features") ? ((String)cmd.getParsedOptionValue("features")) : null;
+						boolean filterChromosomes = cmd.hasOption("noFilter") ? false : true;
             if (norm==null && rpt==null && feat==null) {
             	System.err.println("No annotation specified.");
             	System.err.println("Use --normal, --features, and/or --repeatmask options to annotate results.");
@@ -194,10 +197,10 @@ public class AnnotatePairedClusters implements Callable<Integer> {
 				System.exit(1);
 			}
            
-            ArrayList<PairedCluster> clusterPairs = loadBreakpoints( rargs[0] );
+            ArrayList<PairedCluster> clusterPairs = loadBreakpoints( rargs[0] , filterChromosomes );
 	    String colNames = extractColumnNames(rargs[0]);
             if (norm != null) {
-		annotateNormal( norm, clusterPairs, flank );
+		annotateNormal( norm, clusterPairs, flank , filterChromosomes);
 		colNames = extendColumnNames(colNames, "normal");
 	    }
             if (rpt != null) { 
@@ -220,9 +223,9 @@ public class AnnotatePairedClusters implements Callable<Integer> {
         //ArrayList<PairedCluster> clusterPairs = loadBreakpoints( clustersPairFile );
     }
 
-    public static void annotateNormal(String normalResult, ArrayList<PairedCluster> tumourClusterPairs, int tolerance) {
+    public static void annotateNormal(String normalResult, ArrayList<PairedCluster> tumourClusterPairs, int tolerance, boolean filterChromosomes) {
         TreeSet<PairedCluster> clustersTumour = new TreeSet<PairedCluster>( tumourClusterPairs );
-        TreeSet<PairedCluster> clustersNormal = new TreeSet<PairedCluster>( loadBreakpoints( normalResult ) );
+        TreeSet<PairedCluster> clustersNormal = new TreeSet<PairedCluster>( loadBreakpoints( normalResult, filterChromosomes ) );
 
 		for (PairedCluster tumourCluster : clustersTumour) {
 			PairedCluster lower = new PairedCluster(tumourCluster, -2*tolerance);
