@@ -137,6 +137,9 @@ def run_process_bam(args, input_file, output_file):
         if args.bowtie2_db is None:
             print >> sys.stderr, 'Bowtie2 DB is required to perform alignment of FASTQ file.'
             sys.exit(1)
+        if not os.path.isfile(input_file):
+            print >> sys.stderr, 'Long soft-clip file is empty. Nothing to work with for Socrates. Have the reads been aligned end to end instead of locally?'
+            sys.exit(1)
         print >> sys.stderr, '\nBowtie2 alignment, DB='+args.bowtie2_db
         bt2_cmd = 'bowtie2 -p %d --local -x %s -U %s' % (args.bowtie2_threads, args.bowtie2_db, input_file)
         socrates_cmd = java_cmd + " - %s " % output_file
