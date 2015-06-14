@@ -159,10 +159,11 @@ at least 1, as there would not be a cluster without a realigned soft-clip.
 the preceding column counted and reported in this column.
 9. C1_short_support - similarly, the short support is counted in number...
 10. C1_short_support_bases - ... and nucleotides.
-11. C1_avg_realign_mapq - this last column for C1 summarizes the average mapping
+11. C1_short_support_max_len - the length of the longest SC in this support group.
+12. C1_avg_realign_mapq - this last column for C1 summarizes the average mapping
 quality of the anchor reads. It can be a helpful filter criteria and a minimum
 value can be specified at the launch of Socrates.
-12-22. C2 columns - all columns described above are repeated for C2. There is 
+13-24. C2 columns - all columns described above are repeated for C2. There is 
 only one noticeable difference: C2 can be a cluster formed without realigned 
 soft-clips (see "short SC cluster" below), which leads to empty consensus 
 sequences (there are double-tabs in the output, which can be quite nasty to
@@ -198,4 +199,20 @@ usage: Socrates annotate [options] socrates_paired_cluster_output
 
 -r,	--repeatmask <file>	UCSC repeat masker track file in BED format, Tabix indexed.
 
-
+1.5. Structural variant types
+The current version of Socrates does not support typing of variants as other
+tools do. The reasoning is that typing events can interfere with the inter-
+pretation of results as they might be too suggestive. For example, insertions
+(of novel sequence) and deletions have the same brekapoint signature. This 
+signature is commonly referred to as the deletion type. The deletion type is
+also involved in other, more complex rearrangements. We therefore have so far
+refained from annotating these types. 
+However, for the sake of completeness, here are the type signatures relating to 
+Socrates breakpoints (let us assume that C1 realign and C1 anchor are on the same 
+chromosome and C1 realign pos < C1 anchor pos):
+C1_realign_dir + & C1_anchor_dir -: DELETION TYPE
+C1_realign_dir - & C1_anchor_dir +: TANDEM DUPLICATION TYPE
+C1_realign_dir + & C1_anchor_dir +: INVERSION TYPE (I)
+C1_realign_dir - & C1_anchor_dir -: INVERSION TYPE (II)
+If C1 and C2 are on different chromsomes, the consensus for types is not as 
+clearly defined as those types above. 
