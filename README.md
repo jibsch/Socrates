@@ -3,9 +3,6 @@ Authors: Arthur Hsu, Jan Schroeder, Anthony T Papenfuss
 Date: 27/3/2013
 
 A driver script (developed in Python2.7) - Socrates, can be found in this directory.
-For a test example run with the script, download the test data from 
-http://bioinf.wehi.edu.au/socrates/test_data.tar.gz, extract in the script directory and execute:
-./Socrates all --botie2_db test_data/data/bowtie2_db/ecoli1665_bt2 test_data/data/random_ecoli_63_s.bam
 
 Additional documentation is currently being developed. 
 
