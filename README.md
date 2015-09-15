@@ -2,12 +2,13 @@ README.txt
 Authors: Arthur Hsu, Jan Schroeder, Anthony T Papenfuss 
 Date: 27/3/2013
 
-A driver script (developed in Python2.7) - Socrates, can be found in this directory.
-For a test example run with the script, download the test data from 
-http://bioinf.wehi.edu.au/socrates/test_data.tar.gz, extract in the script directory and execute:
-./Socrates all --botie2_db test_data/data/bowtie2_db/ecoli1665_bt2 test_data/data/random_ecoli_63_s.bam
+-----
+NOTE:
+There is a new version of Socrates hosted on http://github.com/PapenfussLab/socrates
+The new release is dependent on Java1.8. Please use this version if possible.
+----
 
-Additional documentation is currently being developed. 
+A driver script (developed in Python2.7) - Socrates, can be found in this directory.
 
 The Socrates package contains several Java programs (developed in JDK1.6).
 Each program is designed to process data for a specific stages of analysis.
